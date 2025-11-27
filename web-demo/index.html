@@ -1,46 +1,51 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Proyecto Antigravity</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            font-family: 'Inter', sans-serif;
-            color: white;
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        p {
-            font-size: 1.1rem;
-            opacity: 0.8;
-        }
-    </style>
+    <title>Banco de Sangre - Citas Inteligentes</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
+
 <body>
-    <div class="card">
-        <h1>Hola, Antigravity</h1>
-        <p>Este proyecto está sincronizado en la nube ☁️</p>
+    <div class="container">
+        <header>
+            <div class="logo">🩸 LifeFlow</div>
+            <h1>Gestión de Citas</h1>
+        </header>
+
+        <main>
+            <div class="assistant-card">
+                <div class="status-indicator" id="voiceStatus"></div>
+                <p id="assistant-message">Bienvenido. Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?</p>
+                <button id="btn-speak-welcome" class="btn-primary">🔊 Escuchar Saludo</button>
+            </div>
+
+            <div class="appointment-form">
+                <div class="input-group">
+                    <label>Nombre del Donante</label>
+                    <input type="text" placeholder="Ej. Juan Pérez">
+                </div>
+                <div class="input-group">
+                    <label>Tipo de Sangre</label>
+                    <select>
+                        <option>A+</option>
+                        <option>O+</option>
+                        <option>B+</option>
+                        <option>AB+</option>
+                        <option>A-</option>
+                        <option>O-</option>
+                        <option>B-</option>
+                        <option>AB-</option>
+                    </select>
+                </div>
+                <button class="btn-secondary" onclick="announceAppointment()">📅 Agendar Cita</button>
+            </div>
+        </main>
     </div>
+    <script src="script.js"></script>
 </body>
+
 </html>
