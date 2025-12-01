@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es" class="h-full bg-gray-50">
 
 <head>
@@ -764,24 +764,12 @@
                     chat.scrollTop = chat.scrollHeight;
 
                     try {
-                        const today = new Date().toISOString().split('T')[0];
-                        const context = `Eres el asistente del Banco de Sangre ISSS Sonsonate. HOY es ${today}.
+                        const context = `Eres el asistente del Banco de Sangre ISSS Sonsonate.
                 Horario: 5:30-6:30 AM (Orden llegada). 
                 Cupos: Lunes(${CUPOS_DIARIOS[1]}), Martes(${CUPOS_DIARIOS[2]}), Miércoles(${CUPOS_DIARIOS[3]}), Jueves(${CUPOS_DIARIOS[4]}), Viernes(${CUPOS_DIARIOS[5]}), Sábado(${CUPOS_DIARIOS[6]}).
                 Requisitos: ${requisitosBasicos.join(', ')}. 
                 Restricciones: ${restricciones.join(', ')}.
-                
-                IMPORTANTE: Si el usuario quiere AGENDAR una cita, debes obtener:
-                1. Nombre completo
-                2. Número de afiliación (9 dígitos)
-                3. Tipo de sangre
-                4. Cantidad de donantes (número)
-                5. Fecha de la cita (YYYY-MM-DD) - Si dice "mañana" o "lunes", calcula la fecha exacta basándote en que HOY es ${today}.
-
-                Cuando tengas TODOS los datos, NO preguntes más. Responde ÚNICAMENTE con este JSON (sin markdown):
-                {"action": "schedule", "data": {"nombre_paciente": "...", "numero_afiliacion": "...", "tipo_sangre": "...", "cantidad_donantes": N, "fecha_cita": "YYYY-MM-DD"}}
-                
-                Si falta algún dato, pídelo amablemente. Si no es sobre citas, responde normal, breve y amable.`;
+                Responde breve y amable.`;
 
                         console.log("DEBUG: Sending request with Key:", GEMINI_API_KEY ? "Present" : "Missing");
                         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
@@ -794,6 +782,7 @@
                         if (!response.ok) {
                             const errText = await response.text();
                             console.error("Gemini API Error Details:", errText);
+
                             let friendlyMsg = "Error de conexión.";
                             if (response.status === 400 && (errText.includes("API Key") || errText.includes("API_KEY_INVALID"))) {
                                 document.getElementById('modal-api-key').classList.remove('hidden');
@@ -801,41 +790,14 @@
                             } else if (response.status === 404) {
                                 friendlyMsg = "Error: Modelo no encontrado.";
                             }
+
                             throw new Error(`${friendlyMsg} (${response.status})`);
                         }
 
                         const data = await response.json();
-                        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, error de conexión.";
-
-                        // Check for JSON action
-                        let agentAction = null;
-                        try {
-                            const cleanReply = reply.trim().replace(/```json/g, '').replace(/```/g, '');
-                            if (cleanReply.startsWith('{') && cleanReply.includes('"action": "schedule"')) {
-                                agentAction = JSON.parse(cleanReply);
-                            }
-                        } catch (e) { console.log("Not a JSON action"); }
+                        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, error de conexión.";
 
                         document.getElementById(loadingId).remove();
-
-                        if (agentAction && agentAction.action === 'schedule') {
-                            // Execute Agent Action
-                            const citaData = agentAction.data;
-                            citaData.hora_cita = "05:30";
-                            citaData.estado = 'Programada';
-                            citaData.createdAt = new Date().toISOString();
-
-                            const res = await window.dataSdk.create(citaData);
-
-                            if (res.isOk) {
-                                reply = `✅ ¡Listo! He agendado tu cita para el **${citaData.fecha_cita}** a nombre de **${citaData.nombre_paciente}**.`;
-                                updateCalendar();
-                                if (isAdminUnlocked) loadAdminData();
-                            } else {
-                                reply = "❌ Hubo un error al guardar la cita en el sistema. Intenta manualmente.";
-                            }
-                        }
-
                         chat.innerHTML += `<div class="chat-ai self-start bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 text-sm shadow-sm max-w-[85%] mb-2">${marked.parse(reply)}</div>`;
                         chat.scrollTop = chat.scrollHeight;
 
@@ -900,12 +862,7 @@
                     selectedTime = "Orden de llegada";
                     updateCalendar();
                     document.getElementById('step-form').classList.remove('hidden');
-
-                    // Fix: Parse date parts manually to avoid UTC conversion issues
-                    const [y, m, d] = dateStr.split('-').map(Number);
-                    const dateObj = new Date(y, m - 1, d);
-
-                    document.getElementById('appointment-summary').textContent = `${dateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} - Orden de llegada (5:30 - 6:30 AM)`;
+                    document.getElementById('appointment-summary').textContent = `${new Date(dateStr).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} - Orden de llegada (5:30 - 6:30 AM)`;
                     document.getElementById('step-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
                 function updateTimeSlots() {

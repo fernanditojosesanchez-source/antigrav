@@ -1,0 +1,356 @@
+/* ============================================
+   PROFESSIONAL DARK MODE - PANTONE 281 C
+   ============================================ */
+
+:root {
+    /* Primary Colors - PANTONE 281 C */
+    --color-primary: #1c1e4d;
+    --color-primary-dark: #14162e;
+    --color-primary-light: #252850;
+    
+    /* Surface Colors */
+    --color-surface: #252850;
+    --color-surface-elevated: #2d3166;
+    --color-surface-card: #1e2145;
+    
+    /* Border Colors */
+    --color-border: #3a3d6e;
+    --color-border-light: #4a4d7e;
+    
+    /* Text Colors - Emblem */
+    --color-text-primary: #d2d2d2;
+    --color-text-secondary: #a8a8a8;
+    --color-text-muted: #7a7a7a;
+    
+    /* Accent Colors (Red - existing) */
+    --color-accent-red: #991b1b;
+    --color-accent-red-dark: #7f1d1d;
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+body.premium-bg {
+    background: var(--color-primary) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* ============================================
+   GLASS CARDS
+   ============================================ */
+
+.glass-card {
+    background: rgba(37, 40, 80, 0.7) !important;
+    backdrop-filter: blur(16px) !important;
+    border: 1px solid var(--color-border) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* ============================================
+   CARDS & CONTAINERS
+   ============================================ */
+
+/* Main content cards */
+.bg-white {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text-primary) !important;
+    border-color: var(--color-border) !important;
+}
+
+/* Elevated cards */
+.shadow-sm,
+.shadow-md,
+.shadow-lg {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ============================================
+   CALENDAR STYLES
+   ============================================ */
+
+.calendar-day {
+    background-color: var(--color-surface-card) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text-primary) !important;
+}
+
+.calendar-day.available {
+    background-color: #1e4d3c !important;
+    border-color: #16a34a !important;
+    color: var(--color-text-primary) !important;
+}
+
+.calendar-day.limited {
+    background-color: #4d3d1e !important;
+    border-color: #d97706 !important;
+    color: var(--color-text-primary) !important;
+}
+
+.calendar-day.full {
+    background-color: #4d1e1e !important;
+    border-color: #dc2626 !important;
+    color: var(--color-text-muted) !important;
+    opacity: 0.6;
+}
+
+.calendar-day.selected {
+    background-color: #1e3a4d !important;
+    border-color: #3b82f6 !important;
+    color: var(--color-text-primary) !important;
+    font-weight: bold;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+
+.tab-button {
+    background-color: transparent !important;
+    color: var(--color-text-secondary) !important;
+}
+
+.tab-button:hover {
+    background-color: var(--color-surface-elevated) !important;
+    color: var(--color-text-primary) !important;
+}
+
+.tab-button.active {
+    background-color: var(--color-accent-red-dark) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* Tab container */
+#view-agendar,
+#view-mis-citas,
+#view-requisitos,
+#view-admin {
+    background-color: transparent !important;
+}
+
+/* ============================================
+   FORMS & INPUTS
+   ============================================ */
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+    background-color: var(--color-surface-card) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text-primary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--color-text-muted) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--color-border-light) !important;
+    background-color: var(--color-surface-elevated) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(58, 61, 110, 0.3) !important;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.bg-red-900,
+.bg-red-800,
+.bg-red-700 {
+    background-color: var(--color-accent-red) !important;
+    color: var(--color-text-primary) !important;
+}
+
+.bg-red-900:hover,
+.bg-red-800:hover,
+.bg-red-700:hover {
+    background-color: var(--color-accent-red-dark) !important;
+}
+
+.bg-gray-100,
+.bg-gray-200 {
+    background-color: var(--color-surface-elevated) !important;
+    color: var(--color-text-primary) !important;
+}
+
+.bg-gray-50 {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* ============================================
+   TEXT COLORS
+   ============================================ */
+
+.text-gray-800,
+.text-gray-900 {
+    color: var(--color-text-primary) !important;
+}
+
+.text-gray-600,
+.text-gray-700 {
+    color: var(--color-text-secondary) !important;
+}
+
+.text-gray-500,
+.text-gray-400 {
+    color: var(--color-text-muted) !important;
+}
+
+/* ============================================
+   BORDERS
+   ============================================ */
+
+.border-gray-200,
+.border-gray-300 {
+    border-color: var(--color-border) !important;
+}
+
+.border-gray-100 {
+    border-color: var(--color-border) !important;
+}
+
+/* ============================================
+   CHAT WINDOW
+   ============================================ */
+
+.chat-ai {
+    background-color: var(--color-surface-elevated) !important;
+    color: var(--color-text-primary) !important;
+    border-color: var(--color-border) !important;
+}
+
+.chat-user {
+    background-color: var(--color-accent-red-dark) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* Chat container */
+#chat-messages {
+    background-color: var(--color-surface) !important;
+}
+
+#chat-input {
+    background-color: var(--color-surface-card) !important;
+    border-color: var(--color-border) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+
+.fixed.inset-0.bg-black {
+    background-color: rgba(20, 22, 46, 0.85) !important;
+}
+
+/* Modal content */
+.bg-white.rounded-2xl {
+    background-color: var(--color-surface) !important;
+    border: 1px solid var(--color-border) !important;
+}
+
+/* ============================================
+   ADMIN PANEL
+   ============================================ */
+
+/* Stats cards */
+.bg-blue-50,
+.bg-green-50,
+.bg-yellow-50,
+.bg-red-50 {
+    background-color: var(--color-surface-elevated) !important;
+    border-color: var(--color-border) !important;
+}
+
+/* Table rows */
+tr:hover {
+    background-color: var(--color-surface-elevated) !important;
+}
+
+/* ============================================
+   BADGES & LABELS
+   ============================================ */
+
+.bg-green-100 {
+    background-color: #1e4d3c !important;
+    color: #4ade80 !important;
+}
+
+.bg-yellow-100 {
+    background-color: #4d3d1e !important;
+    color: #fbbf24 !important;
+}
+
+.bg-red-100 {
+    background-color: #4d1e1e !important;
+    color: #f87171 !important;
+}
+
+.bg-blue-100 {
+    background-color: #1e3a4d !important;
+    color: #60a5fa !important;
+}
+
+/* ============================================
+   SCROLLBARS (Webkit)
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-primary-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-light);
+}
+
+/* ============================================
+   ADDITIONAL OVERRIDES
+   ============================================ */
+
+/* Ensure all text is readable */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text-primary) !important;
+}
+
+p {
+    color: var(--color-text-secondary) !important;
+}
+
+/* Links */
+a {
+    color: #60a5fa !important;
+}
+
+a:hover {
+    color: #93c5fd !important;
+}
+
+/* Dividers */
+hr {
+    border-color: var(--color-border) !important;
+}
+
+/* Empty states */
+.text-center.py-12 {
+    color: var(--color-text-secondary) !important;
+}

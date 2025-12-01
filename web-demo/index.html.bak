@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="es" class="h-full bg-gray-50">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Citas Banco de Sangre + Voz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Premium Dark Theme Overrides */
+        body {
+            font-family: 'Outfit', sans-serif !important;
+        }
+
+        .premium-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%) !important;
+            color: #e2e8f0 !important;
+            min-height: 100vh;
+        }
+
+        /* Override Tailwind Backgrounds for Glassmorphism */
+        .bg-white,
+        .bg-gray-50,
+        .bg-gray-100 {
+            background-color: rgba(30, 41, 59, 0.7) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #e2e8f0 !important;
+        }
+
+        /* Text Colors */
+        .text-gray-900,
+        .text-gray-800,
+        .text-gray-700 {
+            color: #f1f5f9 !important;
+        }
+
+        .text-gray-600,
+        .text-gray-500 {
+            color: #94a3b8 !important;
+        }
+
+        /* Inputs & Selects */
+        input,
+        select,
+        textarea {
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+        input::placeholder {
+            color: #64748b !important;
+        }
+
+        /* Headers & Accents */
+        header {
+            background: linear-gradient(to right, #7f1d1d, #450a0a) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Buttons */
+        .tab-button.active {
+            background-color: rgba(220, 38, 38, 0.2) !important;
+            color: #fca5a5 !important;
+        }
+
+        .tab-button:not(.active) {
+            background: transparent !important;
+            color: #94a3b8 !important;
+        }
+
+        /* Calendar */
+        .calendar-day {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .calendar-day.available {
+            background: rgba(22, 163, 74, 0.2) !important;
+            border-color: #166534 !important;
+        }
+
+        .calendar-day.limited {
+            background: rgba(217, 119, 6, 0.2) !important;
+            border-color: #92400e !important;
+        }
+
+        .calendar-day.full {
+            background: rgba(220, 38, 38, 0.1) !important;
+            border-color: #7f1d1d !important;
+            opacity: 0.5;
+        }
+
+        .calendar-day.selected {
+            background: rgba(37, 99, 235, 0.3) !important;
+            border-color: #3b82f6 !important;
+        }
+
+        /* Chat */
+        .chat-ai {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #e2e8f0 !important;
+        }
+
+        .chat-user {
+            background: #7f1d1d !important;
+            color: white !important;
+        }
+    </style>
+
+    <script>
+        const DB_KEY = 'banco_sangre_final_v13_fixed';
+
+        window.dataSdk = {
+            init: async (handler) => {
+                console.log("🔋 Sistema V13 (Completo) Iniciado");
+                window._dataHandler = handler;
+                const data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                setTimeout(() => handler.onDataChanged(data), 100);
+                return { isOk: true };
+            },
+            create: async (item) => {
+                const data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                item.__backendId = Date.now().toString();
+                data.push(item);
+                localStorage.setItem(DB_KEY, JSON.stringify(data));
+                if (window._dataHandler) window._dataHandler.onDataChanged(data);
+                return { isOk: true };
+            },
+            update: async (item) => {
+                let data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                const index = data.findIndex(d => d.__backendId === item.__backendId);
+                if (index !== -1) {
+                    data[index] = item;
+                    localStorage.setItem(DB_KEY, JSON.stringify(data));
+                    if (window._dataHandler) window._dataHandler.onDataChanged(data);
+                    return { isOk: true };
+                }
+                return { isOk: false, error: "No encontrado" };
+            },
+            delete: async (item) => {
+                let data = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                const newData = data.filter(d => d.__backendId !== item.__backendId);
+                localStorage.setItem(DB_KEY, JSON.stringify(newData));
+                if (window._dataHandler) window._dataHandler.onDataChanged(newData);
+                return { isOk: true };
+            }
+        };
+
+        window.elementSdk = {
+            init: async (config) => {
+                if (config && config.onConfigChange) config.onConfigChange(config.defaultConfig);
+                return { isOk: true };
+            }
+        };
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .calendar-day {
+            transition: all 0.2s ease;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+
+        @media (min-width: 768px) {
+            .calendar-day {
+                min-height: 80px;
+            }
+
+            .calendar-day:hover {
+                transform: scale(1.05);
+                z-index: 10;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .calendar-day.available {
+            background-color: #dcfce7;
+            border-color: #16a34a;
+        }
+
+        .calendar-day.limited {
+            background-color: #fef3c7;
+            border-color: #d97706;
+        }
+
+        .calendar-day.full {
+            background-color: #fee2e2;
+            border-color: #dc2626;
+            opacity: 0.6;
+        }
+
+        .calendar-day.selected {
+            background-color: #dbeafe;
+            border-color: #2563eb;
+            border-width: 2px;
+            font-weight: bold;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tab-button {
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        @media (max-width: 767px) {
+            .tab-button {
+                flex-direction: column;
+                font-size: 0.75rem;
+                padding: 8px 4px;
+            }
+
+            .tab-button span.icon {
+                font-size: 1.25rem;
+                margin-bottom: 2px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .tab-button {
+                flex-direction: row;
+                font-size: 1rem;
+                padding: 16px;
+                gap: 8px;
+            }
+
+            .tab-button span.icon {
+                font-size: 1.1rem;
+            }
+        }
+
+        .tab-button.active {
+            color: #7f1d1d;
+            font-weight: 700;
+            background-color: #fef2f2;
+        }
+
+        input,
+        select {
+            font-size: 16px !important;
+        }
+
+        /* Chatbot Styles */
+        .chat-bubble {
+            max-width: 80%;
+            border-radius: 1rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-user {
+            background-color: #1f2937;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .chat-ai {
+            background-color: #f3f4f6;
+            color: #1f2937;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .chat-ai strong {
+            font-weight: bold;
+            color: #dc2626;
+        }
+
+        /* Mic Pulse Animation */
+        .mic-active {
+            animation: pulse-red 1.5s infinite;
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #dc2626 !important;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+            }
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+            }
+
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        /* Icon pulse animation */
+        @keyframes bounce-subtle {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+        }
+    </style>
+</head>
+
+<body class="h-full font-sans text-gray-800 premium-bg">
+    <header class="relative overflow-hidden pb-10 pt-10">
+        <div class="absolute inset-0 bg-gradient-to-br from-red-900 via-red-800 to-black opacity-90"></div>
+        <div
+            class="hidden md:block absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full -translate-y-48 translate-x-48 blur-3xl">
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-px bg-white/10"></div>
+        <div class="relative z-10 max-w-6xl mx-auto text-white">
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center gap-4 mb-3">
+                    <span class="text-4xl md:text-6xl drop-shadow-md">🏥</span>
+                    <h1 class="text-3xl md:text-5xl font-bold tracking-tight drop-shadow-md">Banco de Sangre <br
+                            class="md:hidden" /></h1>
+                </div>
+                <p class="hidden md:block text-red-100/80 text-xl tracking-wide font-light">Agenda Digital Inteligente
+                    de Donantes</p>
+            </div>
+            <div class="flex flex-wrap md:grid md:grid-cols-3 justify-center gap-3 md:gap-8 text-sm md:text-lg">
+                <a href="https://www.google.com/maps/search/Hospital+Regional+del+ISSS+Sonsonate" target="_blank"
+                    rel="noopener noreferrer"
+                    class="bg-black/20 backdrop-blur-md rounded-full md:rounded-2xl px-5 py-2 md:py-6 flex md:flex-col items-center md:justify-center md:border md:border-white/10 md:shadow-lg transition-transform md:hover:scale-105 hover:bg-black/40 cursor-pointer">
+                    <span class="mr-2 md:mr-0 md:mb-3 md:text-3xl">📍</span>
+                    <span class="md:font-semibold tracking-wide">Hospital Regional ISSS Sonsonate</span>
+                </a>
+                <a href="https://wa.me/50378552056" target="_blank" rel="noopener noreferrer"
+                    class="bg-black/20 backdrop-blur-md rounded-full md:rounded-2xl px-5 py-2 md:py-6 flex md:flex-col items-center md:justify-center md:border md:border-white/10 md:shadow-lg transition-transform md:hover:scale-105 hover:bg-black/40 cursor-pointer">
+                    <div class="flex flex-col items-center">
+                        <div
+                            class="w-6 h-6 md:w-10 md:h-10 bg-green-500 rounded-full flex items-center justify-center mb-1 md:mr-0 md:mb-3 shadow-sm">
+                            <svg class="w-3 h-3 md:w-6 md:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.787" />
+                            </svg>
+                        </div>
+                        <span class="md:font-semibold tracking-wide">7855-2056</span>
+                    </div>
+                </a>
+                <div
+                    class="bg-black/20 backdrop-blur-md rounded-full md:rounded-2xl px-5 py-2 md:py-6 flex md:flex-col items-center md:justify-center md:border md:border-white/10 md:shadow-lg transition-transform md:hover:scale-105">
+                    <span class="mr-2 md:mr-0 md:mb-3 md:text-3xl">🕒</span>
+                    <span class="md:font-semibold tracking-wide">5:30 - 6:30 AM</span>
+                </div>
+            </div>
+            <p
+                class="mt-6 text-base md:text-lg text-center italic opacity-80 font-light bg-black/20 md:bg-transparent rounded-lg py-1 md:py-0">
+                "Atención exclusiva por orden de llegada"</p>
+        </div>
+    </header>
+    <main class="max-w-6xl mx-auto px-3 md:px-6 -mt-4 md:mt-8 relative z-20">
+        <div
+            class="bg-white rounded-2xl shadow-md p-1 mb-6 flex justify-between overflow-hidden border border-gray-100">
+            <button id="tab-agendar" class="tab-button flex-1 active rounded-xl"><span
+                    class="icon">🩸</span><span>Agendar</span></button>
+            <button id="tab-mis-citas" class="tab-button flex-1 rounded-xl text-gray-500 hover:bg-gray-50"><span
+                    class="icon">📅</span><span>Mis Citas</span></button>
+            <button id="tab-requisitos" class="tab-button flex-1 rounded-xl text-gray-500 hover:bg-gray-50"><span
+                    class="icon">📋</span><span>Info</span></button>
+            <button id="tab-admin" class="tab-button flex-1 rounded-xl text-gray-500 hover:bg-gray-50"><span
+                    class="icon">⚙️</span><span>Admin</span></button>
+        </div>
+        <div id="view-agendar" class="bg-white rounded-2xl shadow-sm p-5 md:p-8 border border-gray-200 hidden fade-in">
+            <h2 class="font-bold text-red-800"></span></p>
+                <div id="time-slots-container" class="md:max-w-md mx-auto"></div>
+        </div>
+        <div id="step-form" class="bg-white rounded-2xl shadow-sm p-5 md:p-8 border border-gray-200 hidden fade-in">
+            <h2 class="text-lg md:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2"><span
+                    class="bg-red-900 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>Datos
+                del Paciente </h2>
+            <div class="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-100 flex items-center gap-3"><span
+                    class="text-2xl">📝</span>
+                <p class="text-sm md:text-base text-blue-800">Cita para: <span id="appointment-summary"
+                        class="font-bold"></span></p>
+            </div>
+            <form id="appointment-form" class="space-y-4 md:space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div><label class="block text-xs md:text-sm font-bold text-gray-600 mb-1 uppercase">Nombre Paciente
+                            *</label><input type="text" name="nombre-paciente" required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-900 outline-none transition-all"
+                            placeholder="Nombre completo"></div>
+                    <div><label class="block text-xs md:text-sm font-bold text-gray-600 mb-1 uppercase">Afiliación (9
+                            dígitos) *</label><input type="tel" id="numero-afiliacion" name="numero-afiliacion" required
+                            maxlength="9" pattern="[0-9]{9}"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-900 outline-none tracking-widest"
+                            placeholder="123456789"></div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+                    <div><label class="block text-xs md:text-sm font-bold text-gray-600 mb-1 uppercase">Donantes
+                            *</label><input type="number" name="cantidad-donantes" required min="1" max="10"
+                            inputmode="numeric"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"
+                            placeholder="Ej: 2"></div>
+                    <div><label class="block text-xs md:text-sm font-bold text-gray-600 mb-1 uppercase">Tipo Sangre
+                            *</label><select name="tipo-sangre" required
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none bg-white">
+                            <option value="">Elegir</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="No sé">No sé</option>
+                        </select></div>
+                    <div class="col-span-2 md:col-span-1"><label
+                            class="block text-xs md:text-sm font-bold text-gray-600 mb-1 uppercase">Teléfono</label><input
+                            type="tel" name="telefono"
+                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"
+                            placeholder="0000-0000"></div>
+                </div>
+                <div class="pt-4 flex gap-4"><button type="button" id="btn-back-to-time"
+                        class="flex-1 md:flex-none md:w-48 py-3 border border-gray-300 text-gray-600 rounded-xl font-medium hover:bg-gray-50">←
+                        Atrás</button><button type="submit"
+                        class="flex-[2] py-3 bg-red-900 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-800 transition-colors">Confirmar
+                        Cita</button></div>
+            </form>
+        </div>
+        </div>
+        <div id="view-mis-citas" class="hidden fade-in">
+            <div class="bg-white rounded-2xl shadow-sm p-5 md:p-8 border border-gray-200 md:max-w-2xl md:mx-auto">
+                <h2 class="text-xl md:text-2xl font-bold text-gray-900 mb-6">Consultar Citas</h2>
+                <div class="flex gap-3 mb-8"><input type="tel" id="buscar-afiliacion"
+                        placeholder="Ingresa No. Afiliación" maxlength="9"
+                        class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-red-900 transition-colors"><button
+                        id="btn-buscar-citas"
+                        class="px-6 bg-red-900 text-white rounded-xl font-bold shadow-md hover:bg-red-800 transition-colors">Buscar</button>
+                </div>
+                <div id="mis-citas-container" class="space-y-4">
+                    <div
+                        class="text-center py-12 text-gray-400 flex flex-col items-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                        <span class="text-4xl mb-3">🔍</span>
+                        <p>Ingresa tu número para ver resultados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="view-requisitos" class="hidden fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-green-500">
+                    <h3 class="text-xl font-bold text-green-700 mb-4 flex items-center"><span
+                            class="mr-2">✅</span>Requisitos Básicos</h3>
+                    <ul id="requisitos-basicos-display" class="space-y-3 text-gray-600"></ul>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-6 border-l-4 border-red-500">
+                    <h3 class="text-xl font-bold text-red-700 mb-4 flex items-center"><span
+                            class="mr-2">❌</span>Restricciones</h3>
+                    <ul id="restricciones-display" class="space-y-3 text-gray-600"></ul>
+                </div>
+            </div>
+            <div class="mt-6 bg-blue-50 rounded-2xl shadow-sm p-6 border border-blue-100">
+                <h3 class="text-lg font-bold text-blue-800 mb-4">💡 Consejos Útiles</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="font-bold text-blue-600 text-sm uppercase mb-2">Antes de donar: </p>
+                        <ul id="consejos-antes-display" class="space-y-1 text-sm text-gray-700"></ul>
+                    </div>
+                    <div>
+                        <p class="font-bold text-blue-600 text-sm uppercase mb-2">Después de donar:</p>
+                        <ul id="consejos-despues-display" class="space-y-1 text-sm text-gray-700"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 text-center"><button id="btn-agendar-desde-requisitos"
+                    class="w-full md:w-auto px-12 py-4 bg-red-900 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-800 transform transition hover:-translate-y-1">¡He
+                    leído y quiero Agendar !</button></div>
+        </div>
+        <div id="view-admin" class="hidden fade-in space-y-6">
+            <div id="admin-lock-screen"
+                class="bg-white rounded-2xl shadow-sm p-8 border border-gray-200 text-center max-w-md mx-auto mt-10">
+                <div class="text-5xl mb-4">🔒</div>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Acceso Restringido</h2>
+                <p class="text-gray-500 mb-6 text-sm">Ingresa la contraseña para acceder.</p><input type="password"
+                    id="admin-password"
+                    class="w-full px-4 py-3 border rounded-xl text-center text-lg tracking-widest mb-4"
+                    placeholder="****" inputmode="numeric"><button onclick="checkAdminAuth()"
+                    class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black">Entrar</button>
+                <p class="text-xs text-gray-400 mt-4">Clave: 1234</p>
+            </div>
+            <div id="admin-content" class="hidden space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm p-5 md:p-8 border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">⚙️ Panel de Administración</h2><button
+                            onclick="logoutAdmin()" class="text-sm text-red-600 hover:underline">Cerrar Sesión</button>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <div class="text-xs text-blue-500 font-bold uppercase mb-1">Total</div>
+                            <div class="text-3xl font-bold text-blue-700" id="stat-total">0</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-xl border border-green-100">
+                            <div class="text-xs text-green-500 font-bold uppercase mb-1">Hoy</div>
+                            <div class="text-3xl font-bold text-green-700" id="stat-hoy">0</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                            <div class="text-xs text-red-500 font-bold uppercase mb-1">Donantes</div>
+                            <div class="text-3xl font-bold text-red-700" id="stat-donantes">0</div>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                            <div class="text-xs text-yellow-600 font-bold uppercase mb-1">Ausencias</div>
+                            <div class="text-3xl font-bold text-yellow-700" id="stat-ausencias">0</div>
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-3">📅 Gestión de Citas</h3>
+                    <div class="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-gray-50 rounded-xl"><input type="date"
+                            id="filtro-fecha" class="flex-1 p-2 border rounded-lg text-sm"><select id="filtro-estado"
+                            class="flex-1 p-2 border rounded-lg text-sm bg-white">
+                            <option value="">Todos</option>
+                            <option value="Programada">Programada</option>
+                            <option value="Completada">Completada</option>
+                        </select>
+                        <div class="flex gap-2"><button id="btn-filtrar-citas"
+                                class="flex-1 px-6 py-2 bg-gray-800 text-white rounded-lg text-sm hover:bg-gray-900">Filtrar</button><button
+                                id="btn-exportar-citas"
+                                class="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">Exportar</button>
+                        </div>
+                    </div>
+                    <div id="admin-citas-container" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4">⏰ Cupos Diarios</h3>
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div><label class="text-xs text-gray-500 block">Lunes</label><input type="number"
+                                    id="cupo-1" class="w-full p-2 border rounded text-center"></div>
+                            <div><label class="text-xs text-gray-500 block">Martes</label><input type="number"
+                                    id="cupo-2" class="w-full p-2 border rounded text-center"></div>
+                            <div><label class="text-xs text-gray-500 block">Miér</label><input type="number" id="cupo-3"
+                                    class="w-full p-2 border rounded text-center"></div>
+                            <div><label class="text-xs text-gray-500 block">Jueves</label><input type="number"
+                                    id="cupo-4" class="w-full p-2 border rounded text-center"></div>
+                            <div><label class="text-xs text-gray-500 block">Viernes</label><input type="number"
+                                    id="cupo-5" class="w-full p-2 border rounded text-center"></div>
+                            <div><label class="text-xs text-gray-500 block">Sábado</label><input type="number"
+                                    id="cupo-6" class="w-full p-2 border rounded text-center bg-yellow-50"></div>
+                        </div><button id="btn-guardar-horarios"
+                            class="w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition-colors">Guardar
+                            Cambios</button>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4">🎉 Días Festivos</h3>
+                        <div class="flex gap-2 mb-3"><input type="date" id="fecha-festivo"
+                                class="flex-1 p-2 border rounded-lg text-sm"><input type="text" id="nombre-festivo"
+                                placeholder="Motivo" class="flex-1 p-2 border rounded-lg text-sm"><button
+                                id="btn-agregar-festivo" class="bg-red-900 text-white px-3 rounded-lg">+</button></div>
+                        <div id="festivos-container" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-5 border border-gray-200">
+                    <h3 class="font-bold text-lg mb-4">📋 Editar Requisitos</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-sm font-bold text-green-600 mb-2">Requisitos Básicos</h4>
+                            <div class="flex gap-2 mb-2"><input id="new-req"
+                                    class="flex-1 border p-1 rounded text-sm"><button
+                                    onclick="addReq('requisitosBasicos','new-req')"
+                                    class="bg-green-600 text-white px-3 rounded text-sm">+</button></div>
+                            <ul id="list-admin-req" class="text-xs space-y-1 text-gray-600"></ul>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-red-600 mb-2">Restricciones</h4>
+                            <div class="flex gap-2 mb-2"><input id="new-res"
+                                    class="flex-1 border p-1 rounded text-sm"><button
+                                    onclick="addReq('restricciones','new-res')"
+                                    class="bg-red-600 text-white px-3 rounded text-sm">+</button></div>
+                            <ul id="list-admin-res" class="text-xs space-y-1 text-gray-600"></ul>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-100">
+                        <div>
+                            <h4 class="text-sm font-bold text-blue-600 mb-2">💡 Consejos Antes</h4>
+                            <div class="flex gap-2 mb-2"><input id="new-tip-before"
+                                    class="flex-1 border p-1 rounded text-sm"><button
+                                    onclick="addReq('consejosAntes','new-tip-before')"
+                                    class="bg-blue-600 text-white px-3 rounded text-sm">+</button></div>
+                            <ul id="list-admin-tip-before" class="text-xs space-y-1 text-gray-600"></ul>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-blue-600 mb-2">💡 Consejos Después</h4>
+                            <div class="flex gap-2 mb-2"><input id="new-tip-after"
+                                    class="flex-1 border p-1 rounded text-sm"><button
+                                    onclick="addReq('consejosDespues','new-tip-after')"
+                                    class="bg-blue-600 text-white px-3 rounded text-sm">+</button></div>
+                            <ul id="list-admin-tip-after" class="text-xs space-y-1 text-gray-600"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+            <div id="chat-window"
+                class="hidden bg-white w-80 md:w-96 h-[500px] rounded-2xl shadow-2xl border border-gray-200 flex flex-col mb-4 overflow-hidden transition-all transform origin-bottom-right">
+                <div class="bg-gradient-to-r from-red-950 to-red-900 p-4 flex justify-between items-center text-white">
+                    <div class="flex items-center gap-2"><span class="text-2xl">🤖</span>
+                        <div>
+                            <h3 class="font-bold text-sm">Asistente IA</h3>
+                            <p class="text-xs opacity-80 text-green-300">● En línea</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3"><button id="mute-btn" onclick="toggleMute()"
+                            class="text-white hover:text-gray-200 text-lg">🔊</button><button onclick="toggleChat()"
+                            class="text-white hover:bg-white/20 rounded-full p-1">✕</button></div>
+                </div>
+                <div id="chat-messages" class="flex-1 bg-gray-50 p-4 overflow-y-auto flex flex-col gap-3">
+                    <div
+                        class="chat-ai self-start bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 text-sm shadow-sm max-w-[85%]">
+                        ¡Hola ! Soy tu asistente de voz. 🎙️<br>Pregúntame sobre horarios,
+                        requisitos o dudas médicas.</div>
+                </div>
+                <div class="p-3 bg-white border-t border-gray-100">
+                    <div class="flex gap-2 items-center"><button id="mic-btn" onclick="startDictation()"
+                            class="bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600 rounded-full w-10 h-10 flex items-center justify-center transition-all shadow-sm border border-gray-200"><svg
+                                class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                                <path
+                                    d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                            </svg></button><input type="text" id="chat-input" placeholder="Escribe o habla..."
+                            class="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:bg-white outline-none"
+                            onkeypress="if(event.key === 'Enter') sendMessage()"><button onclick="sendMessage()"
+                            class="bg-red-900 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-red-800 shadow-md">➤</button>
+                    </div>
+                </div>
+            </div><button onclick="toggleChat()"
+                class="chat-icon-pulse group flex items-center gap-2 bg-gradient-to-r from-red-900 to-red-800 text-white p-4 rounded-full shadow-xl hover:scale-105 transition-transform hover:shadow-2xl"><span
+                    class="text-2xl">💬</span><span
+                    class="font-bold pr-1 hidden group-hover:inline-block transition-all">Asistente IA</span></button>
+        </div>
+        <div id="loading"
+            class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-6 flex flex-col items-center shadow-2xl">
+                <div class="animate-spin rounded-full h-10 w-10 border-4 border-red-900 border-t-transparent mb-3">
+                </div><span class="text-gray-700 font-medium">Procesando...</span>
+            </div>
+        </div>
+        <div id="success-message"
+            class="hidden fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-green-600 text-white px-6 py-4 rounded-xl shadow-xl z-50 flex items-center gap-3 animate-bounce">
+            <span class="text-2xl">✅</span>
+            <p>¡Operación exitosa !</p>
+        </div>
+        <div id="error-message"
+            class="hidden fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-red-600 text-white px-6 py-4 rounded-xl shadow-xl z-50 flex items-center gap-3">
+            <span class="text-2xl">⚠️</span>
+            <p id="error-text">Error</p>
+        </div>
+        </div>
+        <script> // === CONFIGURACIÓN ===
+            const GEMINI_API_KEY = 'TU_API_KEY_AQUI';
+
+            let currentCitas = [],
+                selectedDate = null,
+                selectedTime = "05:30",
+                currentMonth = new Date();
+            let CUPOS_DIARIOS = [0,
+                20,
+                20,
+                20,
+                20,
+                20,
+                15];
+            let diasAtencion = [1,
+                2,
+                3,
+                4,
+                5,
+                6],
+                diasFestivos = [],
+                isAdminUnlocked = false;
+            let requisitosBasicos = ["18 a 65 años",
+                "Peso > 110 lbs",
+                "DUI Vigente",
+                "Desayuno ligero"],
+                restricciones = ["Tatuajes < 1 año",
+                    "Embarazo/Lactancia",
+                    "Alcohol 24h",
+                    "Gripe"],
+                consejosAntes = ["Dormir 6h",
+                    "Beber agua",
+                    "Ropa cómoda"],
+                consejosDespues = ["No fumar 2h",
+                    "No alcohol 24h",
+                    "Beber líquidos"];
+
+            // --- VOICE CONFIG ---
+            let isMuted = false;
+            const synth = window.speechSynthesis;
+            const recognition = window.SpeechRecognition || window.webkitSpeechRecognition ? new (window.SpeechRecognition || window.webkitSpeechRecognition)() : null;
+
+            if (recognition) {
+                recognition.lang = 'es-ES';
+                recognition.continuous = false;
+            }
+
+            const dataHandler = {
+                onDataChanged(data) {
+                    currentCitas = data;
+                    updateCalendar();
+                    updateTimeSlots();
+                    if (isAdminUnlocked && !document.getElementById('view-admin').classList.contains('hidden')) loadAdminData();
+                }
+            }
+
+                ;
+
+            async function initializeApp() {
+                try {
+                    await window.dataSdk.init(dataHandler);
+
+                    await window.elementSdk.init({});
+                    const c = JSON.parse(localStorage.getItem('banco_config_v11'));
+
+                    if (c) {
+                        if (c.cupos) CUPOS_DIARIOS = c.cupos;
+                        if (c.festivos) diasFestivos = c.festivos;
+                        if (c.req) requisitosBasicos = c.req;
+                        if (c.res) restricciones = c.res;
+                        if (c.tipsBefore) consejosAntes = c.tipsBefore;
+                        if (c.tipsAfter) consejosDespues = c.tipsAfter;
+                    }
+
+                    renderRequisitos();
+                }
+
+                catch (e) {
+                    console.error(e);
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                initializeApp(); initializeTabs(); initializeCalendar(); initializeForm(); initializeMisCitas(); initializeAdminPanel();
+            });
+
+            // --- CHATBOT & VOICE LOGIC ---
+            function toggleChat() {
+                const w = document.getElementById('chat-window');
+                w.classList.toggle('hidden');
+                if (!w.classList.contains('hidden')) document.getElementById('chat-input').focus();
+            }
+
+            function toggleMute() {
+                isMuted = !isMuted;
+                document.getElementById('mute-btn').textContent = isMuted ? '🔇' : '🔊';
+                if (isMuted) synth.cancel();
+            }
+
+            function startDictation() {
+                if (!recognition) return alert("Tu navegador no soporta dictado.");
+                const btn = document.getElementById('mic-btn');
+                btn.classList.add('mic-active');
+                recognition.start();
+
+                recognition.onresult = (event) => {
+                    const text = event.results[0][0].transcript;
+                    document.getElementById('chat-input').value = text;
+                    btn.classList.remove('mic-active');
+                    sendMessage(true); // Auto send and read
+                }
+
+                    ;
+                recognition.onerror = () => btn.classList.remove('mic-active');
+                recognition.onend = () => btn.classList.remove('mic-active');
+            }
+
+            function speak(text) {
+                if (isMuted || !synth) return;
+                synth.cancel();
+
+                // Limpiamos el texto de símbolos raros
+                const cleanText = text.replace(/[*#_]/g, '');
+                const utter = new SpeechSynthesisUtterance(cleanText);
+
+                // INTENTO DE MEJORA DE VOZ:
+                // Buscamos todas las voces disponibles en el dispositivo
+                const voices = synth.getVoices();
+
+                // Buscamos preferiblemente una voz de Google o Microsoft en español (suenan mejor)
+                const bestVoice = voices.find(v => v.lang.includes('es') && (v.name.includes('Google') || v.name.includes('Microsoft')));
+
+                // Si encontramos una "buena", la usamos. Si no, usamos cualquiera en español.
+                if (bestVoice) {
+                    utter.voice = bestVoice;
+                }
+
+                else {
+                    utter.lang = 'es-ES';
+                }
+
+                // Ajustes para que suene menos "lenta"
+                utter.rate = 1.1; // Un poquito más rápido (1.0 es normal)
+                utter.pitch = 1.0; // Tono normal
+
+                synth.speak(utter);
+            }
+
+            async function sendMessage(autoSpeak = false) {
+                const input = document.getElementById('chat-input');
+                const msg = input.value.trim();
+                if (!msg) return;
+                const chat = document.getElementById('chat-messages');
+
+                chat.innerHTML += `<div class="chat-user self-end bg-gray-800 text-white rounded-2xl rounded-tr-none p-3 text-sm shadow-sm max-w-[85%] mb-2">$ {
+                msg
+            }
+
+            </div>`;
+                input.value = '';
+                chat.scrollTop = chat.scrollHeight;
+
+                const loadingId = 'loading-' + Date.now();
+                chat.innerHTML += `<div id="${loadingId}" class="chat-ai self-start bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 text-sm shadow-sm max-w-[85%] mb-2"><div class="flex gap-1"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+                chat.scrollTop = chat.scrollHeight;
+
+                try {
+                    const context = `Eres el asistente del Banco de Sangre ISSS Sonsonate. Horario: 5:30-6:30 AM (Orden llegada). Cupos: Lunes($ {
+                        CUPOS_DIARIOS[1]
+
+                    }),
+                Martes($ {
+                        CUPOS_DIARIOS[2]
+
+                    }),
+                Miércoles($ {
+                        CUPOS_DIARIOS[3]
+
+                    }),
+                Jueves($ {
+                        CUPOS_DIARIOS[4]
+
+                    }),
+                Viernes($ {
+                        CUPOS_DIARIOS[5]
+
+                    }),
+                Sábado($ {
+                        CUPOS_DIARIOS[6]
+
+                    }). Requisitos: $ {
+                    requisitosBasicos.join(', ')
+                }
+
+                . Restricciones: $ {
+                    restricciones.join(', ')
+                }
+
+                . Responde breve y amable.`;
+
+                    const response = await fetch(`https: //generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+
+                        method: 'POST', headers: {
+                            'Content-Type': 'application/json'
+                        }
+
+                        ,
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{
+                                    text: context + "\nUsuario: " + msg
+                                }
+
+                                ]
+                            }
+
+                            ]
+                        })
+                    });
+                    const data = await response.json();
+                    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Lo siento, error de conexión.";
+
+                    document.getElementById(loadingId).remove();
+
+                    chat.innerHTML += `<div class="chat-ai self-start bg-white border border-gray-200 rounded-2xl rounded-tl-none p-3 text-sm shadow-sm max-w-[85%] mb-2">$ {
+            marked.parse(reply)
+        }
+
+        </div>`;
+                    chat.scrollTop = chat.scrollHeight;
+
+                    if (autoSpeak || !isMuted) speak(reply);
+
+                }
+
+                catch (e) {
+                    document.getElementById(loadingId).remove();
+                    chat.innerHTML += `<div class="chat-ai self-start bg-red-50 border border-red-100 text-red-600 p-3 rounded-xl text-xs mb-2">Error: Verifica API Key.</div>`;
+                }
+            }
+
+            // --- LOGIC ---
+            function initializeTabs() {
+                const tabs = ['agendar',
+                    'mis-citas',
+                    'requisitos',
+                    'admin'];
+
+                tabs.forEach(t => {
+                    document.getElementById(`tab-$ {
+                            t
+                        }
+
+                        `).addEventListener('click', () => {
+                        tabs.forEach(x => {
+                            document.getElementById(`tab-$ {
+                                            x
+                                        }
+
+                                        `).classList.remove('active', 'text-red-900', 'bg-fef2f2'); document.getElementById(`tab-$ {
+                                            x
+                                        }
+
+                                        `).classList.add('text-gray-500'); document.getElementById(`view-$ {
+                                            x
+                                        }
+
+                                        `).classList.add('hidden');
+                        });
+
+                        document.getElementById(`tab-$ {
+                                    t
+                                }
+
+                                `).classList.add('active', 'text-red-900', 'bg-fef2f2'); document.getElementById(`tab-$ {
+                                    t
+                                }
+
+                                `).classList.remove('text-gray-500'); document.getElementById(`view-$ {
+                                    t
+                                }
+
+                                `).classList.remove('hidden');
+
+                        if (t === 'admin') {
+                            if (isAdminUnlocked) {
+                                document.getElementById('admin-lock-screen').classList.add('hidden'); document.getElementById('admin-content').classList.remove('hidden'); loadAdminData();
+                            }
+
+                            else {
+                                document.getElementById('admin-lock-screen').classList.remove('hidden'); document.getElementById('admin-content').classList.add('hidden');
+                            }
+                        }
+
+                        if (t === 'mis-citas') {
+                            document.getElementById('mis-citas-container').innerHTML = '<div class="text-center py-12 text-gray-400 flex flex-col items-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200"><span class="text-4xl mb-3">🔍</span><p>Ingresa tu número para ver resultados</p></div>'; document.getElementById('buscar-afiliacion').value = '';
+                        }
+                    });
+                });
+                document.getElementById('btn-agendar-desde-requisitos').onclick = () => document.getElementById('tab-agendar').click();
+            }
+
+            function checkAdminAuth() {
+                if (document.getElementById('admin-password').value === '1234') {
+                    isAdminUnlocked = true;
+                    document.getElementById('admin-password').value = '';
+                    document.getElementById('admin-lock-screen').classList.add('hidden');
+                    document.getElementById('admin-content').classList.remove('hidden');
+                    loadAdminData();
+                }
+
+                else showError('Contraseña incorrecta');
+            }
+
+            window.checkAdminAuth = checkAdminAuth;
+
+            window.logoutAdmin = () => {
+                isAdminUnlocked = false;
+                document.getElementById('admin-lock-screen').classList.remove('hidden');
+                document.getElementById('admin-content').classList.add('hidden');
+            }
+
+                ;
+
+            function initializeCalendar() {
+                document.getElementById('prev-month').onclick = () => {
+                    currentMonth.setMonth(currentMonth.getMonth() - 1);
+                    updateCalendar();
+                }
+
+                    ;
+
+                document.getElementById('next-month').onclick = () => {
+                    currentMonth.setMonth(currentMonth.getMonth() + 1);
+                    updateCalendar();
+                }
+
+                    ;
+                updateCalendar();
+            }
+
+            function getCuposDia(dateObj) {
+                const day = dateObj.getDay();
+                return CUPOS_DIARIOS[day] || 20;
+            }
+
+            function updateCalendar() {
+                const monthNames = ['Enero',
+                    'Febrero',
+                    'Marzo',
+                    'Abril',
+                    'Mayo',
+                    'Junio',
+                    'Julio',
+                    'Agosto',
+                    'Septiembre',
+                    'Octubre',
+                    'Noviembre',
+                    'Diciembre'];
+
+                document.getElementById('current-month').textContent = `$ {
+                monthNames[currentMonth.getMonth()]
+            }
+
+            $ {
+                currentMonth.getFullYear()
+            }
+
+            `;
+                const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+                const startDate = new Date(firstDay);
+                startDate.setDate(startDate.getDate() - firstDay.getDay());
+                const grid = document.getElementById('calendar-grid');
+                grid.innerHTML = '';
+
+                for (let i = 0; i < 42; i++) {
+                    const date = new Date(startDate);
+                    date.setDate(startDate.getDate() + i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const isCurrent = date.getMonth() === currentMonth.getMonth();
+                    const isPast = date < new Date().setHours(0, 0, 0, 0);
+                    const isWorkingDay = diasAtencion.includes(date.getDay());
+                    const isFestivo = diasFestivos.some(f => f.fecha === dateStr);
+                    const el = document.createElement('div');
+                    el.className = 'calendar-day border rounded-lg text-center relative ';
+                    if (!isCurrent) el.className += 'bg-gray-50 text-gray-300 border-transparent';
+                    else if (isPast || !isWorkingDay || isFestivo) el.className += 'bg-gray-100 text-gray-400 cursor-not-allowed';
+
+                    else {
+                        const count = currentCitas.filter(c => c.fecha_cita === dateStr && c.estado === 'Programada').length;
+                        const totalCupos = getCuposDia(date);
+                        const remaining = totalCupos - count;
+
+                        if (remaining <= 0) {
+                            el.className += 'full bg-red-50 border-red-200 text-red-400';
+
+                            el.innerHTML = `<span class="font-bold text-lg">$ {
+                            date.getDate()
+                        }
+
+                        </span><span class="text-[10px] block leading-none">Lleno</span>`;
+                        }
+
+                        else {
+                            const statusClass = remaining < 5 ? 'limited' : 'available';
+
+                            el.className += `$ {
+                            statusClass
+                        }
+
+                        cursor-pointer active:scale-95`;
+                            el.onclick = () => selectDate(dateStr);
+
+                            el.innerHTML = `<span class="font-bold text-lg text-gray-800">$ {
+                            date.getDate()
+                        }
+
+                        </span>`;
+                            const dotColor = remaining < 5 ? 'bg-yellow-500' : 'bg-green-500';
+                            el.innerHTML += `<div class="w-1.5 h-1.5 rounded-full ${dotColor} mx-auto mt-1"></div>`;
+                        }
+
+                        if (selectedDate === dateStr) el.classList.add('selected', 'ring-2', 'ring-blue-500', 'border-transparent');
+                    }
+
+                    if ((!isCurrent || isPast || !isWorkingDay || isFestivo) && !el.innerHTML) {
+                        el.innerHTML = `<span class="font-medium">$ {
+                        date.getDate()
+                    }
+
+                    </span>`;
+                        if (isFestivo) el.innerHTML += `<div class="text-[8px] text-red-500">Festivo</div>`;
+                    }
+
+                    grid.appendChild(el);
+                }
+            }
+
+            function selectDate(dateStr) {
+                selectedDate = dateStr;
+                updateCalendar();
+                document.getElementById('step-time').classList.remove('hidden');
+
+                document.getElementById('selected-date-display').textContent = new Date(dateStr).toLocaleDateString('es-ES', {
+                    weekday: 'long', day: 'numeric', month: 'long'
+                });
+                updateTimeSlots();
+
+                document.getElementById('step-time').scrollIntoView({
+                    behavior: 'smooth', block: 'center'
+                });
+            }
+
+            function updateTimeSlots() {
+                const container = document.getElementById('time-slots-container');
+                const count = currentCitas.filter(c => c.fecha_cita === selectedDate && c.estado === 'Programada').length;
+                const totalCupos = getCuposDia(new Date(selectedDate));
+                const remaining = totalCupos - count;
+
+                if (remaining <= 0) {
+                    container.innerHTML = '<div class="text-center p-4 bg-red-50 text-red-600 rounded-xl font-bold">Cupos Agotados</div>';
+                    return;
+                }
+
+                container.innerHTML = `<div onclick="selectTime()" class="relative overflow-hidden bg-gradient-to-r from-red-50 to-white border-2 border-red-100 rounded-xl p-6 cursor-pointer active:scale-[0.98] transition-transform shadow-sm group hover:border-red-400"><div class="absolute right-0 top-0 bg-red-100 text-red-700 text-[10px] font-bold px-3 py-1 rounded-bl-xl">ORDEN LLEGADA</div><h3 class="text-xl md:text-2xl font-black text-gray-800 group-hover:text-red-700">5:30 - 6:30 AM</h3><div class="mt-3 flex items-center justify-between"><span class="text-sm text-gray-500">Cupos disponibles:</span><span class="text-2xl font-bold text-green-600">$ {
+                remaining
+            }
+
+            </span></div><button class="mt-4 w-full py-3 bg-white border border-red-200 text-red-600 font-bold rounded-xl text-sm group-hover:bg-red-600 group-hover:text-white transition-colors">CONFIRMAR ASISTENCIA</button></div>`;
+            }
+
+            function selectTime() {
+                document.getElementById('step-form').classList.remove('hidden');
+
+                document.getElementById('appointment-summary').textContent = `$ {
+                selectedDate
+            }
+
+            (Mañana)`;
+
+                document.getElementById('step-form').scrollIntoView({
+                    behavior: 'smooth', block: 'start'
+                });
+            }
+
+            function initializeForm() {
+                const form = document.getElementById('appointment-form');
+
+                document.getElementById('numero-afiliacion').addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                });
+
+                document.getElementById('btn-back-to-time').onclick = () => {
+                    document.getElementById('step-form').classList.add('hidden');
+                }
+
+                    ;
+
+                form.onsubmit = async (e) => {
+                    e.preventDefault();
+                    showLoading(true);
+                    const fd = new FormData(form);
+
+                    const cita = {
+                        nombre_paciente: fd.get('nombre-paciente'), cantidad_donantes: parseInt(fd.get('cantidad-donantes')), numero_afiliacion: fd.get('numero-afiliacion'), tipo_sangre: fd.get('tipo-sangre'), telefono: fd.get('telefono'), fecha_cita: selectedDate, hora_cita: "05:30", estado: 'Programada', createdAt: new Date().toISOString()
+                    }
+
+                        ;
+                    const res = await window.dataSdk.create(cita);
+                    showLoading(false);
+
+                    if (res.isOk) {
+                        showSuccess('¡Cita Agendada!');
+                        form.reset();
+                        document.getElementById('step-time').classList.add('hidden');
+                        document.getElementById('step-form').classList.add('hidden');
+                        selectedDate = null;
+                        updateCalendar();
+                        document.getElementById('tab-mis-citas').click();
+
+                        setTimeout(() => {
+                            document.getElementById('buscar-afiliacion').value = cita.numero_afiliacion; buscarCitas();
+                        }
+
+                            , 600);
+                    }
+
+                    else showError('Error al guardar');
+                }
+
+                    ;
+            }
+
+            function initializeMisCitas() {
+                document.getElementById('btn-buscar-citas').onclick = buscarCitas;
+            }
+
+            function buscarCitas() {
+                const val = document.getElementById('buscar-afiliacion').value;
+                if (!val) return showError('Ingresa afiliación');
+                const found = currentCitas.filter(c => c.numero_afiliacion === val && c.estado === 'Programada');
+                const container = document.getElementById('mis-citas-container');
+
+                if (found.length === 0) {
+                    container.innerHTML = '<div class="text-center py-12 text-gray-400 flex flex-col items-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200"><span class="text-4xl mb-3">🔍</span><p>No se encontraron citas activas</p></div>';
+                    return;
+                }
+
+                container.innerHTML = found.map(c => `<div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm relative overflow-hidden" ><div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-10 -mt-10 z-0" ></div><div class="relative z-10" ><div class="flex justify-between items-start mb-2" ><div><h4 class="font-bold text-lg text-gray-800" >$ {
+                    c.nombre_paciente
+                }
+
+                </h4><div class="text-xs font-mono text-gray-500 bg-gray-100 inline-block px-2 py-0.5 rounded mt-1" >$ {
+                    c.numero_afiliacion
+                }
+
+                </div></div><span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-lg" >Activa</span></div><div class="flex items-center gap-3 mt-3 text-sm text-gray-600" ><span class="flex items-center" >📅 $ {
+                    c.fecha_cita
+                }
+
+                </span><span class="flex items-center" >⏰ 5:30 AM</span></div><div class="mt-4 pt-3 border-t border-gray-50 flex justify-between items-center" ><span class="text-xs font-bold text-red-600 uppercase" >Orden de llegada</span><button onclick="cancelarCita('${c.__backendId}')" class="text-red-500 text-sm font-medium px-3 py-1 border border-red-100 rounded-lg active:bg-red-50 hover:bg-red-50" >Cancelar</button></div></div></div>`).join('');
+            }
+
+            function renderRequisitos() {
+                const ul1 = document.getElementById('requisitos-basicos-display');
+                const ul2 = document.getElementById('restricciones-display');
+                const ul3 = document.getElementById('consejos-antes-display');
+                const ul4 = document.getElementById('consejos-despues-display');
+
+                if (ul1) ul1.innerHTML = requisitosBasicos.map(r => `<li>$ {
+                    r
+                }
+
+                </li>`).join('');
+
+                if (ul2) ul2.innerHTML = restricciones.map(r => `<li>$ {
+                    r
+                }
+
+                </li>`).join('');
+
+                if (ul3) ul3.innerHTML = consejosAntes.map(r => `<li>$ {
+                    r
+                }
+
+                </li>`).join('');
+
+                if (ul4) ul4.innerHTML = consejosDespues.map(r => `<li>$ {
+                    r
+                }
+
+                </li>`).join('');
+            }
+
+            function initializeAdminPanel() {
+                document.getElementById('btn-guardar-horarios').onclick = () => {
+                    for (let i = 1; i <= 6; i++) {
+                        CUPOS_DIARIOS[i] = parseInt(document.getElementById(`cupo-$ {
+                                i
+                            }
+
+                            `).value) || 20;
+                    }
+
+                    saveConfig();
+                    updateCalendar();
+                    showSuccess('Configuración guardada');
+                }
+
+                    ;
+
+                document.getElementById('btn-agregar-festivo').onclick = () => {
+                    const date = document.getElementById('fecha-festivo').value;
+                    const name = document.getElementById('nombre-festivo').value;
+
+                    if (date && name) {
+                        diasFestivos.push({
+                            fecha: date, nombre: name
+                        });
+                        saveConfig();
+                        renderFestivos();
+                        updateCalendar();
+                        document.getElementById('nombre-festivo').value = '';
+                    }
+                }
+
+                    ;
+                document.getElementById('btn-filtrar-citas').onclick = loadAdminData;
+
+                document.getElementById('btn-exportar-citas').onclick = () => {
+                    const header = "Fecha,Paciente,Afiliacion,Sangre,Estado\n";
+
+                    const rows = currentCitas.map(c => `$ {
+                    c.fecha_cita
+                }
+
+                , $ {
+                    c.nombre_paciente
+                }
+
+                , $ {
+                    c.numero_afiliacion
+                }
+
+                , $ {
+                    c.tipo_sangre
+                }
+
+                , $ {
+                    c.estado
+                }
+
+                `).join("\n");
+
+                    const blob = new Blob([header + rows], {
+                        type: 'text/csv'
+                    });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'citas.csv';
+                    a.click();
+                }
+
+                    ;
+            }
+
+            function loadAdminData() {
+                const container = document.getElementById('admin-citas-container');
+                const filterDate = document.getElementById('filtro-fecha').value;
+                const filterStatus = document.getElementById('filtro-estado').value;
+
+                for (let i = 1; i <= 6; i++) document.getElementById(`cupo-$ {
+                    i
+                }
+
+                `).value = CUPOS_DIARIOS[i];
+                document.getElementById('stat-total').textContent = currentCitas.length;
+                document.getElementById('stat-hoy').textContent = currentCitas.filter(c => c.fecha_cita === new Date().toISOString().split('T')[0]).length;
+                const donantes = currentCitas.reduce((sum, c) => sum + (parseInt(c.donantes_reales) || 0), 0);
+                document.getElementById('stat-donantes').textContent = donantes;
+                document.getElementById('stat-ausencias').textContent = currentCitas.filter(c => c.estado === 'No asistió').length;
+                renderAdminList('list-admin-req', requisitosBasicos);
+                renderAdminList('list-admin-res', restricciones);
+                renderAdminList('list-admin-tip-before', consejosAntes);
+                renderAdminList('list-admin-tip-after', consejosDespues);
+                renderFestivos();
+                let data = [...currentCitas].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                if (filterDate) data = data.filter(c => c.fecha_cita === filterDate);
+                if (filterStatus) data = data.filter(c => c.estado === filterStatus);
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="text-center py-6 text-gray-400">Sin registros</div>';
+                    return;
+                }
+
+                container.innerHTML = data.map(c => `<div class="bg-gray-50 p-3 rounded-xl flex justify-between items-center border border-gray-100 hover:shadow-sm transition-shadow" ><div><div class="font-bold text-gray-800 text-sm md:text-base" >$ {
+                    c.nombre_paciente
+                }
+
+                </div><div class="text-xs text-gray-500" >$ {
+                    c.fecha_cita
+                }
+
+                • $ {
+                    c.cantidad_donantes
+                }
+
+                donantes</div><div class="text-[10px] mt-1 px-2 py-0.5 bg-white rounded border inline-block" >$ {
+                    c.estado
+                }
+
+                </div></div><div class="flex gap-2" >$ {
+                    c.estado==='Programada' ? `< button onclick = "mostrarModalCompletada('${c.__backendId}', ${c.cantidad_donantes})" class= "bg-green-100 text-green-700 p-2 rounded-lg text-xs font-bold hover:bg-green-200" > Completar</button > ` : ''
+                }
+
+                <button onclick="mostrarConfirmacionEliminar('${c.__backendId}')" class="bg-white border text-red-500 p-2 rounded-lg text-xs hover:bg-red-50" >🗑</button></div></div>`).join('');
+            }
+
+            function renderAdminList(id, arr) {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                el.innerHTML = arr.map((item, i) => `<li class="flex justify-between items-center bg-white p-1 rounded border border-gray-100" ><span>$ {
+                    item
+                }
+
+                </span><button class="text-red-500 font-bold px-2" onclick="window.removeReqItem('${id}',${i})" >×</button></li>`).join('');
+
+                window.removeReqItem = (listId, idx) => {
+                    if (listId === 'list-admin-req') requisitosBasicos.splice(idx, 1);
+                    if (listId === 'list-admin-res') restricciones.splice(idx, 1);
+                    if (listId === 'list-admin-tip-before') consejosAntes.splice(idx, 1);
+                    if (listId === 'list-admin-tip-after') consejosDespues.splice(idx, 1);
+                    saveConfig();
+                    loadAdminData();
+                    renderRequisitos();
+                }
+
+                    ;
+            }
+
+            function addReq(type, inputId) {
+                const val = document.getElementById(inputId).value;
+                if (!val) return;
+                if (type === 'requisitosBasicos') requisitosBasicos.push(val);
+                if (type === 'restricciones') restricciones.push(val);
+                if (type === 'consejosAntes') consejosAntes.push(val);
+                if (type === 'consejosDespues') consejosDespues.push(val);
+                document.getElementById(inputId).value = '';
+                saveConfig();
+                loadAdminData();
+                renderRequisitos();
+            }
+
+            window.addReq = addReq;
+
+            function renderFestivos() {
+                const el = document.getElementById('festivos-container');
+                if (!el) return;
+
+                el.innerHTML = diasFestivos.map((f, i) => `<div class="flex justify-between text-xs bg-red-50 p-2 rounded mb-1" ><span>$ {
+                    f.fecha
+                }
+
+                : $ {
+                    f.nombre
+                }
+
+                </span><button class="text-red-600 font-bold" onclick="removeFestivo(${i})" >×</button></div>`).join('');
+            }
+
+            window.removeFestivo = (i) => {
+                diasFestivos.splice(i, 1);
+                saveConfig();
+                renderFestivos();
+                updateCalendar();
+            }
+
+                ;
+
+            function saveConfig() {
+                const config = {
+                    cupos: CUPOS_DIARIOS, festivos: diasFestivos, req: requisitosBasicos, res: restricciones, tipsBefore: consejosAntes, tipsAfter: consejosDespues
+                }
+
+                    ;
+                localStorage.setItem('banco_config_v11', JSON.stringify(config));
+            }
+
+            function showLoading(b) {
+                document.getElementById('loading').classList.toggle('hidden', !b);
+            }
+
+            function showSuccess(m) {
+                const el = document.getElementById('success-message');
+                el.querySelector('p').textContent = m;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 2500);
+            }
+
+            function showError(m) {
+                const el = document.getElementById('error-message');
+                document.getElementById('error-text').textContent = m;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 3000);
+            }
+
+            window.cancelarCita = async (id) => {
+                if (!confirm('¿Seguro deseas cancelar?')) return;
+                const item = currentCitas.find(c => c.__backendId === id);
+                if (item) await window.dataSdk.delete(item);
+                buscarCitas();
+                showSuccess('Cita cancelada');
+            }
+
+                ;
+            let activeId = null;
+
+            window.mostrarModalCompletada = (id, cant) => {
+                activeId = id;
+                document.getElementById('donantes-reales').value = cant;
+                document.getElementById('modal-completada').classList.remove('hidden');
+            }
+
+                ;
+            window.cerrarModalCompletada = () => document.getElementById('modal-completada').classList.add('hidden');
+
+            window.confirmarCompletada = async () => {
+                const item = currentCitas.find(c => c.__backendId === activeId);
+                const reales = document.getElementById('donantes-reales').value;
+
+                if (item) await window.dataSdk.update({
+                    ...item, estado: 'Completada', donantes_reales: reales
+                });
+                cerrarModalCompletada();
+                loadAdminData();
+                showSuccess('Cita completada');
+            }
+
+                ;
+
+            window.mostrarConfirmacionEliminar = (id) => {
+                activeId = id;
+                document.getElementById('modal-eliminar').classList.remove('hidden');
+            }
+
+                ;
+            window.cerrarModalEliminar = () => document.getElementById('modal-eliminar').classList.add('hidden');
+
+            window.confirmarEliminacion = async () => {
+                const item = currentCitas.find(c => c.__backendId === activeId);
+                if (item) await window.dataSdk.delete(item);
+                cerrarModalEliminar();
+                loadAdminData();
+                showSuccess('Registro eliminado');
+            }
+
+                ;
+        </script>
+</body>
+
+</html>
